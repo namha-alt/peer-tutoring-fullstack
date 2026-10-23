@@ -1,6 +1,9 @@
-// SlotSync REST API Client (Talking to Deployed Render Backend + MongoDB Atlas)
+// SlotSync REST API Client (Works with Local Express server and Deployed Render Backend)
 const DEPLOYED_BACKEND_URL = 'https://peer-tutoring-fullstack.onrender.com';
-const API_BASE_URL = (typeof window !== 'undefined' && window.location.origin.includes('onrender.com'))
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const isRender = typeof window !== 'undefined' && window.location.origin.includes('onrender.com');
+
+const API_BASE_URL = (isLocalhost || isRender)
   ? '/api'
   : `${DEPLOYED_BACKEND_URL}/api`;
 
