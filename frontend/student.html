@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Dashboard - SlotSync (MongoDB API)</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/api-monitor.css">
 </head>
 <body>
 
@@ -134,15 +133,10 @@
             <textarea id="book-specifics" placeholder="e.g. I need help understanding practice problem #4 on worksheet 3 and preparing for the midterm exam..."></textarea>
           </div>
 
-          <div class="form-group">
-            <label for="book-attachment">Attach Worksheet / Syllabus File <span style="font-weight: 400; color: var(--text-muted);">(Optional &bull; Multer Upload &bull; Max 5MB)</span></label>
-            <input type="file" id="book-attachment" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" style="padding: 8px; border: 1px dashed var(--border-color); background: var(--bg-color); width: 100%; border-radius: var(--radius-sm);">
-            <div id="attachment-status" style="font-size: 0.8rem; margin-top: 4px; color: var(--text-muted);"></div>
-          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" id="cancel-booking-modal-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="confirm-booking-btn">Submit Request (POST /api/bookings)</button>
+          <button type="submit" class="btn btn-primary" id="confirm-booking-btn">Submit Request</button>
         </div>
       </form>
     </div>
@@ -179,6 +173,5 @@
   <script src="js/api.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/student.js"></script>
-  <script src="js/api-monitor.js"></script>
 </body>
 </html>

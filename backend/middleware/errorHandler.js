@@ -25,11 +25,6 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({ success: false, errorType: 'ValidationError', message });
   }
 
-  // Multer File Size or Format Error
-  if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ success: false, errorType: 'MulterError', message: 'File is too large. Max limit is 5MB.' });
-  }
-
   // JWT Errors
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({ success: false, errorType: 'AuthError', message: 'Invalid token. Authorization denied.' });

@@ -1,7 +1,6 @@
 const Booking = require('../model/Booking');
 const Slot = require('../model/Slot');
 const User = require('../model/User');
-const { bookingEmitter } = require('../events/bookingEmitter');
 
 function intervalsOverlap(startA, endA, startB, endB) {
   return startA < endB && endA > startB;
@@ -104,9 +103,6 @@ exports.createBooking = async (req, res, next) => {
       status: 'pending',
       requestedAt: new Date()
     });
-
-    // Emit event via EventEmitter
-    bookingEmitter.emit('booking:requested', booking);
 
     const populated = await Booking.findById(booking._id)
       .populate('tutorId', 'name email subjects')
@@ -226,7 +222,6 @@ exports.updateBookingStatus = async (req, res, next) => {
     }
 
     await booking.save();
-    bookingEmitter.emit(status === 'confirmed' ? 'booking:confirmed' : 'booking:rejected', booking);
 
     res.status(200).json({
       success: true,
@@ -276,7 +271,6 @@ exports.cancelBooking = async (req, res, next) => {
     booking.cancelReason = cancelReason ? cancelReason.trim() : (isTutor ? 'Cancelled by tutor' : 'Cancelled by student');
 
     await booking.save();
-    bookingEmitter.emit('booking:cancelled', booking);
 
     res.status(200).json({
       success: true,

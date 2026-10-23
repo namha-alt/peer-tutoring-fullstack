@@ -8,7 +8,7 @@ const API_BASE_URL = (isLocalhost || isRender)
   : `${DEPLOYED_BACKEND_URL}/api`;
 
 const api = {
-  // Token & Session Storage
+  // Token & Session Storage in localStorage
   getToken: () => localStorage.getItem('SlotSync_token'),
   setToken: (token) => localStorage.setItem('SlotSync_token', token),
   clearToken: () => localStorage.removeItem('SlotSync_token'),
@@ -29,7 +29,7 @@ const api = {
     api.clearUser();
   },
 
-  // Generic Request Helper with Live Traffic Monitoring
+  // Generic Request Helper
   request: async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
     const token = api.getToken();
@@ -40,51 +40,24 @@ const api = {
       ...(options.headers || {})
     };
 
-    const startTime = Date.now();
-    let response;
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
+
+    const text = await response.text();
     let data;
-    let error;
-
     try {
-      response = await fetch(url, {
-        ...options,
-        headers
-      });
-
-      const text = await response.text();
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch (e) {
-        data = { message: text };
-      }
-
-      if (!response.ok) {
-        throw new Error(data.message || `Request failed with status ${response.status}`);
-      }
-
-      return data;
-    } catch (err) {
-      error = err;
-      throw err;
-    } finally {
-      const durationMs = Date.now() - startTime;
-      const status = response ? response.status : 0;
-
-      // Broadcast live event for the Live API HUD
-      const trafficDetail = {
-        id: Math.random().toString(36).substring(2, 9),
-        timestamp: new Date().toISOString(),
-        timeFormatted: new Date().toLocaleTimeString(),
-        method: options.method || 'GET',
-        endpoint: url,
-        status: status,
-        durationMs: durationMs,
-        requestBody: options.body ? JSON.parse(options.body) : null,
-        responseBody: data || (error ? { error: error.message } : null)
-      };
-
-      window.dispatchEvent(new CustomEvent('api:request-logged', { detail: trafficDetail }));
+      data = text ? JSON.parse(text) : {};
+    } catch (e) {
+      data = { message: text };
     }
+
+    if (!response.ok) {
+      throw new Error(data.message || `Request failed with status ${response.status}`);
+    }
+
+    return data;
   },
 
   // Auth Endpoints
@@ -127,7 +100,6 @@ const api = {
       method: 'PUT',
       body: JSON.stringify({ maxCapacity })
     });
-    // Update local cached user
     const user = api.getUser();
     if (user) {
       user.maxCapacity = maxCapacity;
@@ -167,10 +139,10 @@ const api = {
   },
 
   // Bookings Endpoints
-  createBooking: async (slotId, date, topic, specifics, attachmentUrl = '', attachmentOriginalName = '') => {
+  createBooking: async (slotId, date, topic, specifics) => {
     return await api.request('/bookings', {
       method: 'POST',
-      body: JSON.stringify({ slotId, date, topic, specifics, attachmentUrl, attachmentOriginalName })
+      body: JSON.stringify({ slotId, date, topic, specifics })
     });
   },
 
@@ -191,19 +163,5 @@ const api = {
       method: 'POST',
       body: JSON.stringify({ cancelReason })
     });
-  },
-
-  // System & Traffic
-  getSystemTraffic: async () => {
-    const result = await api.request('/system/traffic', { method: 'GET' });
-    return result.logs || [];
-  },
-
-  clearSystemTraffic: async () => {
-    return await api.request('/system/traffic', { method: 'DELETE' });
-  },
-
-  getDbStats: async () => {
-    return await api.request('/system/db-stats', { method: 'GET' });
   }
 };

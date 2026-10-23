@@ -371,7 +371,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const topic = document.getElementById('book-topic').value.trim();
     const specifics = document.getElementById('book-specifics').value.trim();
-    const attachmentInput = document.getElementById('book-attachment');
 
     if (!topic) {
       document.getElementById('book-topic-error').textContent = 'Topic is required';
@@ -379,38 +378,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     confirmBookingBtn.disabled = true;
-    confirmBookingBtn.textContent = 'Submitting Request (Live API)...';
+    confirmBookingBtn.textContent = 'Submitting Request...';
 
     try {
-      let attachmentUrl = '';
-      let attachmentOriginalName = '';
-
-      // Upload file via Multer if selected
-      if (attachmentInput && attachmentInput.files.length > 0) {
-        confirmBookingBtn.textContent = 'Uploading File via Multer...';
-        const file = attachmentInput.files[0];
-        const formData = new FormData();
-        formData.append('material', file);
-
-        const uploadRes = await fetch('/api/files/upload', {
-          method: 'POST',
-          body: formData
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok) throw new Error(uploadData.message || 'File upload failed');
-
-        attachmentUrl = uploadData.file.fileUrl;
-        attachmentOriginalName = uploadData.file.originalName;
-      }
-
-      confirmBookingBtn.textContent = 'Saving Booking in MongoDB...';
       await api.createBooking(
         selectedSlotForBooking.id || selectedSlotForBooking._id,
         selectedDateStr,
         topic,
-        specifics,
-        attachmentUrl,
-        attachmentOriginalName
+        specifics
       );
 
       toast.show('Booking request submitted to tutor successfully!', 'success');
@@ -420,7 +395,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       toast.show(err.message || 'Failed to submit booking', 'error');
     } finally {
       confirmBookingBtn.disabled = false;
-      confirmBookingBtn.textContent = 'Submit Request (POST /api/bookings)';
+      confirmBookingBtn.textContent = 'Submit Request';
     }
   });
 
