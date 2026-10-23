@@ -20,6 +20,13 @@ logs/*.log
 .DS_Store
 Thumbs.db
 
-# Uploads
+# Postman app caches
+.postman/
+postman/
+
+# Multer Uploads
 backend/public/uploads/*
 !backend/public/uploads/.gitkeep
+
+# Legacy unrefactored folder
+tutorslot-express-mongodb/
