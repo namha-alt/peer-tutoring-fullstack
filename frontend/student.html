@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - SlotSync (MongoDB API)</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/api-monitor.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      <div class="nav-brand-group">
+        <a href="index.html" class="nav-brand">SlotSync</a>
+      </div>
+      <div class="nav-user">
+        <span class="role-badge">Student</span>
+        <span id="user-name-display" style="font-weight: 500;">Student</span>
+        <button class="btn btn-outline btn-sm" id="logout-btn">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="dashboard-header mb-md" style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-md); flex-wrap: wrap;">
+      <div>
+        <h1 class="nav-brand" style="font-size: 2rem;">Student Dashboard</h1>
+        <p>Welcome back, <span id="student-name-profile">Student</span>! (Real-time MongoDB Sync)</p>
+      </div>
+      
+      <div class="profile-card" style="background: var(--surface-color); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; gap: var(--space-md); font-size: 0.9rem;">
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Attendance</span>
+          <strong id="profile-attendance">100%</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Hours Learned</span>
+          <strong id="profile-hours">0</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-header">
+      <div>
+        <h1>Find a Tutor & Book Slots</h1>
+        <p class="mt-sm">Browse available slots across tutors in MongoDB. Click any slot to request a session.</p>
+      </div>
+      <div class="dashboard-stats">
+        <div class="stat-pill">
+          Weekly Active Requests: <strong id="stat-requests">0 / 3</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Browse Tutors Section -->
+    <div class="mb-lg">
+      <div class="browse-tutors-header">
+        <h2>Browse Qualified Tutors</h2>
+        <div style="display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap;">
+          <input type="text" id="tutor-search" placeholder="Search by subject or name..." style="max-width: 220px;">
+          <select id="tutor-filter" style="max-width: 200px;">
+            <option value="all">All Tutors</option>
+          </select>
+        </div>
+      </div>
+      <div id="tutor-cards-container" class="tutor-cards-container">
+        <!-- Rendered by student.js via GET /api/users/tutors -->
+      </div>
+    </div>
+
+    <!-- Calendar View -->
+    <div class="mb-md" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-sm);">
+      <h2 style="font-size: 1.5rem;">Weekly Availability Calendar</h2>
+      <div style="display: flex; gap: var(--space-sm); align-items: center;">
+        <button class="btn btn-outline" id="prev-week-btn" style="padding: 4px 12px;">&lt; Prev</button>
+        <strong id="week-label" style="min-width: 140px; text-align: center;">This Week</strong>
+        <button class="btn btn-outline" id="next-week-btn" style="padding: 4px 12px;">Next &gt;</button>
+      </div>
+    </div>
+
+    <div class="calendar-container">
+      <div class="calendar-header" id="calendar-header">
+        <div class="calendar-day-header">Time</div>
+      </div>
+      <div class="calendar-body" id="calendar-body">
+        <div class="calendar-time-labels" id="time-labels"></div>
+      </div>
+    </div>
+
+    <!-- My Tutoring Sessions -->
+    <div class="mb-lg mt-lg">
+      <h2>My Tutoring Sessions</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Track your pending requests, confirmed sessions, and cancellation records live from MongoDB.</p>
+      <div id="my-bookings-container" class="mt-md">
+        <!-- Rendered by student.js via GET /api/bookings/my -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Booking Request Modal -->
+  <div id="booking-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Request Tutoring Session (Live API)</h3>
+        <button class="modal-close-btn" id="close-booking-modal">&times;</button>
+      </div>
+      <form id="booking-request-form">
+        <div class="modal-body">
+          <div class="modal-meta-box">
+            <div class="modal-meta-row">
+              <span style="color: var(--text-muted);">Tutor:</span>
+              <strong id="modal-tutor-name">--</strong>
+            </div>
+            <div class="modal-meta-row">
+              <span style="color: var(--text-muted);">Subjects:</span>
+              <span id="modal-tutor-subject" style="font-weight: 500;">--</span>
+            </div>
+            <div class="modal-meta-row">
+              <span style="color: var(--text-muted);">Session Time:</span>
+              <strong id="modal-slot-time">--</strong>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="book-topic">What topic do you want to cover? <span style="color: var(--error-color);">*</span></label>
+            <input type="text" id="book-topic" placeholder="e.g. Calculus: Derivatives & Chain Rule" required>
+            <span class="error-message" id="book-topic-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="book-specifics">Specifics & Questions for Tutor <span style="font-weight: 400; color: var(--text-muted);">(Helps tutor prepare in advance)</span></label>
+            <textarea id="book-specifics" placeholder="e.g. I need help understanding practice problem #4 on worksheet 3 and preparing for the midterm exam..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="book-attachment">Attach Worksheet / Syllabus File <span style="font-weight: 400; color: var(--text-muted);">(Optional &bull; Multer Upload &bull; Max 5MB)</span></label>
+            <input type="file" id="book-attachment" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" style="padding: 8px; border: 1px dashed var(--border-color); background: var(--bg-color); width: 100%; border-radius: var(--radius-sm);">
+            <div id="attachment-status" style="font-size: 0.8rem; margin-top: 4px; color: var(--text-muted);"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancel-booking-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="confirm-booking-btn">Submit Request (POST /api/bookings)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cancel Confirmation Modal -->
+  <div id="cancel-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Cancel Tutoring Session</h3>
+        <button class="modal-close-btn" id="close-cancel-modal">&times;</button>
+      </div>
+      <form id="cancel-booking-form">
+        <div class="modal-body">
+          <p style="margin-bottom: var(--space-md); color: var(--text-main); font-size: 0.95rem;">
+            Are you sure you want to cancel this booking with <strong id="cancel-modal-tutor-name">Tutor</strong> on <span id="cancel-modal-time">--</span>? This will free up the slot for other students in MongoDB.
+          </p>
+
+          <div class="form-group">
+            <label for="cancel-reason">Reason for cancellation <span style="font-weight: 400; color: var(--text-muted);">(Optional note for tutor)</span></label>
+            <textarea id="cancel-reason" placeholder="e.g. Unexpected schedule conflict with my lab exam..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="abort-cancel-btn">Keep Session</button>
+          <button type="submit" class="btn btn-danger" id="confirm-cancel-btn">Cancel Booking (Live API)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/student.js"></script>
+  <script src="js/api-monitor.js"></script>
+</body>
+</html>

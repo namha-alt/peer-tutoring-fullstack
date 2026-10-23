@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutor Dashboard - SlotSync (MongoDB API)</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/api-monitor.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      <div class="nav-brand-group">
+        <a href="index.html" class="nav-brand">SlotSync</a>
+      </div>
+      <div class="nav-user">
+        <span class="role-badge">Tutor</span>
+        <span id="user-name-display" style="font-weight: 500;">Tutor</span>
+        <button class="btn btn-outline btn-sm" id="logout-btn">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Tutor Profile Header Card -->
+    <div class="mb-md mt-md" style="background: var(--surface-color); padding: var(--space-md); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; gap: var(--space-lg); align-items: center; flex-wrap: wrap;">
+      <div>
+        <h2 style="margin: 0; font-size: 1.25rem;">Welcome back, <span id="tutor-name-profile">Tutor</span>!</h2>
+        <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Synced in real-time with MongoDB</p>
+      </div>
+      <div style="display: flex; gap: var(--space-lg); margin-left: auto; text-align: center; flex-wrap: wrap;">
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Rating</span>
+          <strong id="profile-rating" style="font-size: 1.1rem; color: var(--primary-color);">★ 4.9/5</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Hours Taught</span>
+          <strong id="profile-hours" style="font-size: 1.1rem; color: var(--primary-color);">0</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Subjects</span>
+          <strong id="profile-subjects" style="font-size: 1.1rem; color: var(--text-main);">General</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Header & Stats -->
+    <div class="dashboard-header">
+      <div>
+        <h1>Manage Availability & Requests</h1>
+        <p class="mt-sm">Click empty slots to publish availability. Review incoming student booking requests below.</p>
+      </div>
+      <div class="dashboard-stats">
+        <div class="stat-pill">
+          Available Slots: <strong id="stat-available">0</strong>
+        </div>
+        <div class="stat-pill">
+          Pending Requests: <strong id="stat-pending">0</strong>
+        </div>
+        <div class="stat-pill">
+          Confirmed: <strong id="stat-booked">0</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Controls -->
+    <div class="mb-md" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+      <h2>Availability Schedule</h2>
+      <div style="display: flex; gap: var(--space-sm); align-items: center;">
+        <label for="tutor-capacity-setting" style="font-size: 0.9rem; color: var(--text-muted);">Max Students per Slot:</label>
+        <input type="number" id="tutor-capacity-setting" min="1" max="10" value="1" style="width: 65px; padding: 6px; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+      </div>
+      <div style="display: flex; gap: var(--space-sm); align-items: center;">
+        <button class="btn btn-outline" id="prev-week-btn" style="padding: 4px 12px;">&lt; Prev</button>
+        <strong id="week-label" style="min-width: 140px; text-align: center;">This Week</strong>
+        <button class="btn btn-outline" id="next-week-btn" style="padding: 4px 12px;">Next &gt;</button>
+      </div>
+    </div>
+
+    <!-- Dynamic Calendar Grid -->
+    <div class="calendar-container">
+      <div class="calendar-header" id="calendar-header">
+        <div class="calendar-day-header">Time</div>
+      </div>
+      <div class="calendar-body" id="calendar-body">
+        <div class="calendar-time-labels" id="time-labels"></div>
+      </div>
+    </div>
+
+    <!-- Pending Requests for Tutor Approval -->
+    <div class="mb-lg mt-lg">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h2>Pending Booking Requests</h2>
+          <p style="font-size: 0.9rem; margin-top: 4px; color: var(--text-muted);">Students awaiting your confirmation. Accept to officially confirm the session in MongoDB.</p>
+        </div>
+      </div>
+      <div id="pending-requests-container" class="mt-md">
+        <!-- Rendered by tutor.js -->
+      </div>
+    </div>
+
+    <!-- Confirmed Sessions -->
+    <div class="mb-lg mt-lg">
+      <h2>Confirmed Tutoring Sessions</h2>
+      <p style="font-size: 0.9rem; margin-top: 4px; color: var(--text-muted);">Review student topics and preparation notes in advance of your lessons.</p>
+      <div id="confirmed-bookings-container" class="mt-md">
+        <!-- Rendered by tutor.js -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Tutor Cancel Session/Slot Modal -->
+  <div id="tutor-cancel-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="tutor-cancel-modal-title">Cancel Session</h3>
+        <button class="modal-close-btn" id="close-tutor-cancel-modal">&times;</button>
+      </div>
+      <form id="tutor-cancel-form">
+        <div class="modal-body">
+          <p id="tutor-cancel-modal-desc" style="margin-bottom: var(--space-md); color: var(--text-main); font-size: 0.95rem;">
+            Are you sure you want to cancel this session?
+          </p>
+
+          <div class="form-group">
+            <label for="tutor-cancel-reason">Reason for cancellation <span style="font-weight: 400; color: var(--text-muted);">(Will be shown to student)</span></label>
+            <textarea id="tutor-cancel-reason" placeholder="e.g. Schedule conflict with department faculty meeting..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="abort-tutor-cancel-btn">Keep Session</button>
+          <button type="submit" class="btn btn-danger" id="confirm-tutor-cancel-btn">Cancel Session (Live API)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/tutor.js"></script>
+  <script src="js/api-monitor.js"></script>
+</body>
+</html>

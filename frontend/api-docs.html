@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlotSync - Live API Explorer & Presentation Console</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/api-monitor.css">
+  <style>
+    .docs-container {
+      max-width: 1200px;
+      margin: var(--space-xl) auto;
+      padding: 0 var(--space-lg);
+    }
+    .endpoint-card {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    .endpoint-card:hover {
+      border-color: var(--primary-color);
+    }
+    .endpoint-header {
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      user-select: none;
+      background: #FAFAF8;
+    }
+    .endpoint-method {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      min-width: 70px;
+      text-align: center;
+    }
+    .endpoint-path {
+      font-family: monospace;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      flex: 1;
+    }
+    .endpoint-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .endpoint-body {
+      padding: 16px 18px;
+      border-top: 1px solid var(--border-color);
+      background: white;
+    }
+    .tester-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+    }
+    @media (max-width: 768px) {
+      .tester-grid { grid-template-columns: 1fr; }
+    }
+    .live-code-box {
+      background: #0F172A;
+      color: #38BDF8;
+      font-family: monospace;
+      font-size: 0.82rem;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #1E293B;
+      min-height: 120px;
+      max-height: 260px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .db-stats-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #065F46;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      <div class="nav-brand-group">
+        <a href="index.html" class="nav-brand">SlotSync</a>
+        <span class="api-status-badge" style="background: rgba(16, 185, 129, 0.15);"><span class="pulse-dot"></span> LIVE REST TESTBED</span>
+      </div>
+      <div class="nav-user">
+        <a href="student.html" class="btn btn-outline btn-sm">Student App</a>
+        <a href="tutor.html" class="btn btn-outline btn-sm">Tutor App</a>
+        <a href="login.html" class="btn btn-primary btn-sm">Sign In / Switch Role</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="docs-container">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-lg);">
+      <div>
+        <h1 style="font-size: 2.2rem; color: var(--primary-color);">Interactive Live API Console</h1>
+        <p>Demonstrate live HTTP requests, test backend REST routes, and view real-time MongoDB query responses.</p>
+      </div>
+      <div id="db-health-badge" class="db-stats-badge">
+        <span class="pulse-dot"></span>
+        <span>Connecting to MongoDB...</span>
+      </div>
+    </div>
+
+    <!-- MongoDB Live Stats Bar -->
+    <div style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-md); margin-bottom: var(--space-xl); display: flex; gap: var(--space-lg); align-items: center; flex-wrap: wrap; box-shadow: var(--shadow-sm);">
+      <div>
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Database</span>
+        <div style="font-weight: 600; font-size: 1.1rem; color: #10B981;">MongoDB 127.0.0.1:27017</div>
+      </div>
+      <div>
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Database Name</span>
+        <div style="font-weight: 600; font-size: 1.1rem;">slotsync_db</div>
+      </div>
+      <div>
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Users</span>
+        <div style="font-weight: 600; font-size: 1.1rem;" id="stat-total-users">--</div>
+      </div>
+      <div>
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Slots</span>
+        <div style="font-weight: 600; font-size: 1.1rem;" id="stat-total-slots">--</div>
+      </div>
+      <div>
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Bookings</span>
+        <div style="font-weight: 600; font-size: 1.1rem;" id="stat-total-bookings">--</div>
+      </div>
+      <div style="margin-left: auto;">
+        <button class="btn btn-outline btn-sm" id="refresh-stats-btn">↻ Refresh Stats</button>
+      </div>
+    </div>
+
+    <!-- Endpoint 1: Health & DB Status -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-health')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/system/health</span>
+        <span class="endpoint-desc">Backend health & MongoDB connection status</span>
+      </div>
+      <div class="endpoint-body" id="ep-health">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Request Parameters</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">None required.</p>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/system/health', null, 'res-health')">
+              ⚡ Execute Request
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Live MongoDB Response</label>
+            <pre class="live-code-box" id="res-health">Click "Execute Request" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 2: Get Qualified Tutors -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-tutors')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/users/tutors</span>
+        <span class="endpoint-desc">Fetch all tutor profiles with subjects & open slot counts</span>
+      </div>
+      <div class="endpoint-body" id="ep-tutors">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Request Parameters</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Public route. Returns all tutors from MongoDB.</p>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/users/tutors', null, 'res-tutors')">
+              ⚡ Execute Request
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Live MongoDB Response</label>
+            <pre class="live-code-box" id="res-tutors">Click "Execute Request" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 3: Get Available Slots -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-slots')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/slots/available</span>
+        <span class="endpoint-desc">Get available calendar slots across all tutors with live booking counts</span>
+      </div>
+      <div class="endpoint-body" id="ep-slots">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Request Parameters</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Returns all active slots from MongoDB populated with tutor details.</p>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/slots/available', null, 'res-slots')">
+              ⚡ Execute Request
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Live MongoDB Response</label>
+            <pre class="live-code-box" id="res-slots">Click "Execute Request" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 4: User Login -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-login')">
+        <span class="endpoint-method method-POST">POST</span>
+        <span class="endpoint-path">/api/auth/login</span>
+        <span class="endpoint-desc">Authenticate user & issue JWT Bearer token</span>
+      </div>
+      <div class="endpoint-body" id="ep-login">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Request Body (JSON)</label>
+            <textarea id="payload-login" style="font-family: monospace; font-size: 0.85rem; height: 100px;">{
+  "email": "sarah@tutors.edu",
+  "password": "password123"
+}</textarea>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testLoginEndpoint()">
+              ⚡ Execute Request & Set Active Token
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Live MongoDB Response</label>
+            <pre class="live-code-box" id="res-login">Click "Execute Request" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 5: Get My Bookings -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-bookings')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/bookings/my</span>
+        <span class="endpoint-desc">Fetch sessions for authenticated user (Bearer JWT)</span>
+      </div>
+      <div class="endpoint-body" id="ep-bookings">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Authorization Header</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);" id="current-token-indicator">Uses currently logged-in JWT session.</p>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/bookings/my', null, 'res-bookings')">
+              ⚡ Execute Request
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Live MongoDB Response</label>
+            <pre class="live-code-box" id="res-bookings">Click "Execute Request" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 6: Live API Traffic Feed -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-traffic')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/system/traffic</span>
+        <span class="endpoint-desc">Server-side real-time rolling request stream</span>
+      </div>
+      <div class="endpoint-body" id="ep-traffic">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Request Parameters</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Returns the last 60 requests logged by Express middleware.</p>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/system/traffic', null, 'res-traffic')">
+              ⚡ Execute Request
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Live Server Traffic Response</label>
+            <pre class="live-code-box" id="res-traffic">Click "Execute Request" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 7: Multer File Upload (Topic 40) -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-upload')">
+        <span class="endpoint-method method-POST">POST</span>
+        <span class="endpoint-path">/api/files/upload</span>
+        <span class="endpoint-desc">Topic 40: Multer file uploads with validation & disk storage</span>
+      </div>
+      <div class="endpoint-body" id="ep-upload">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Upload Study Material (PDF, DOCX, TXT, PNG)</label>
+            <input type="file" id="api-docs-file" style="margin-top: 6px; padding: 6px; border: 1px dashed var(--border-color); width: 100%;">
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testFileUploadEndpoint()">
+              ⚡ Upload File via Multer
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Live Multer Response</label>
+            <pre class="live-code-box" id="res-upload">Select a file and click "Upload File via Multer"...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 8: Node.js Streams CSV Export (Topic 34) -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-stream')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/files/export/csv</span>
+        <span class="endpoint-desc">Topic 34: Node.js Streams & Chunked HTTP piping</span>
+      </div>
+      <div class="endpoint-body" id="ep-stream">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Stream Tutoring Sessions</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Streams CSV data dynamically using Readable stream & Buffers without loading entire dataset into memory.</p>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/files/export/csv', null, 'res-stream')">
+                ⚡ Stream to Console
+              </button>
+              <a href="/api/files/export/csv" class="btn btn-outline btn-sm mt-sm" download>
+                📥 Download CSV File
+              </a>
+            </div>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Streamed Response Preview</label>
+            <pre class="live-code-box" id="res-stream">Click "Stream to Console" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 9: Buffers & Binary Data (Topic 34) -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-buffer')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/files/buffer-demo</span>
+        <span class="endpoint-desc">Topic 34: Buffer allocation, Hex/Base64 encoding, & Binary handling</span>
+      </div>
+      <div class="endpoint-body" id="ep-buffer">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Custom Input Text for Buffer</label>
+            <input type="text" id="buffer-input" value="SlotSync Node.js & MongoDB Architecture" style="font-family: monospace;">
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/files/buffer-demo?text=' + encodeURIComponent(document.getElementById('buffer-input').value), null, 'res-buffer')">
+              ⚡ Execute Buffer Manipulation
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Buffer Analysis Output</label>
+            <pre class="live-code-box" id="res-buffer">Click "Execute Buffer Manipulation" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 10: EventEmitter & Audit Logging (Topic 34) -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-events')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/files/events</span>
+        <span class="endpoint-desc">Topic 34: Node.js EventEmitter lifecycle events & non-blocking audit logging</span>
+      </div>
+      <div class="endpoint-body" id="ep-events">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Event Logs Feed</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Displays real-time booking events fired via EventEmitter and written to audit log files using <code>fs.appendFile</code>.</p>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/files/events', null, 'res-events')">
+              ⚡ Fetch EventEmitter Logs
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Live EventEmitter Audit Feed</label>
+            <pre class="live-code-box" id="res-events">Click "Fetch EventEmitter Logs" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 11: Node.js V8 Engine & Event Loop (Topics 31 & 32) -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-internals')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/internals/system</span>
+        <span class="endpoint-desc">Topics 31 & 32: V8 Engine, libuv Event Loop, Process & Global Objects</span>
+      </div>
+      <div class="endpoint-body" id="ep-internals">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Node.js Runtime & V8 Engine</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Inspects V8 version, memory usage heap, libuv event loop phases, and process globals.</p>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/internals/system', null, 'res-internals')">
+              ⚡ Inspect V8 & Runtime Internals
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">V8 & Runtime Inspection Data</label>
+            <pre class="live-code-box" id="res-internals">Click "Inspect V8 & Runtime Internals" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint 12: Callbacks, Promises, & Async/Await (Topics 27 & 28) -->
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggleEndpoint('ep-async')">
+        <span class="endpoint-method method-GET">GET</span>
+        <span class="endpoint-path">/api/internals/async-demo</span>
+        <span class="endpoint-desc">Topics 27 & 28: Callbacks vs Promises vs Async/Await side-by-side demo</span>
+      </div>
+      <div class="endpoint-body" id="ep-async">
+        <div class="tester-grid">
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Asynchronous Pipeline Demo</label>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Demonstrates non-blocking sequential async tasks executed on the microtask queue.</p>
+            <button class="btn btn-primary btn-sm mt-sm" onclick="testEndpoint('GET', '/api/internals/async-demo', null, 'res-async')">
+              ⚡ Run Async/Await Pipeline
+            </button>
+          </div>
+          <div>
+            <label style="font-weight: 600; margin-bottom: 6px;">Execution Pipeline Result</label>
+            <pre class="live-code-box" id="res-async">Click "Run Async/Await Pipeline" to test...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/api-monitor.js"></script>
+
+  <script>
+    function toggleEndpoint(id) {
+      const el = document.getElementById(id);
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function testEndpoint(method, url, body, outputId) {
+      const outEl = document.getElementById(outputId);
+      outEl.textContent = 'Executing request to Express & MongoDB...';
+
+      const startTime = Date.now();
+      try {
+        const token = api.getToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(url, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined
+        });
+
+        const data = await res.json();
+        const duration = Date.now() - startTime;
+
+        outEl.textContent = `// HTTP ${res.status} ${res.statusText} (${duration}ms)\n` + (typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+      } catch (err) {
+        outEl.textContent = `// Request Failed: ${err.message}`;
+      }
+    }
+
+    async function testFileUploadEndpoint() {
+      const outEl = document.getElementById('res-upload');
+      const fileInput = document.getElementById('api-docs-file');
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        outEl.textContent = '// Please choose a file using the file picker above first.';
+        return;
+      }
+
+      outEl.textContent = 'Uploading file via Multer to server...';
+      const formData = new FormData();
+      formData.append('material', fileInput.files[0]);
+
+      const startTime = Date.now();
+      try {
+        const res = await fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        const duration = Date.now() - startTime;
+        outEl.textContent = `// HTTP ${res.status} ${res.statusText} (${duration}ms)\n` + JSON.stringify(data, null, 2);
+        toast.show('File uploaded successfully via Multer!', 'success');
+      } catch (err) {
+        outEl.textContent = `// Upload Error: ${err.message}`;
+        toast.show(err.message, 'error');
+      }
+    }
+
+    async function testLoginEndpoint() {
+      const outEl = document.getElementById('res-login');
+      const payloadStr = document.getElementById('payload-login').value;
+
+      try {
+        const payload = JSON.parse(payloadStr);
+        const startTime = Date.now();
+        const result = await api.login(payload.email, payload.password);
+        const duration = Date.now() - startTime;
+
+        outEl.textContent = `// HTTP 200 OK (${duration}ms)\n` + JSON.stringify(result, null, 2);
+        toast.show(`Logged in as ${result.user.name} (${result.user.role})! Token active.`, 'success');
+        updateTokenIndicator();
+        refreshDbStats();
+      } catch (err) {
+        outEl.textContent = `// Error: ${err.message}`;
+        toast.show(err.message, 'error');
+      }
+    }
+
+    function updateTokenIndicator() {
+      const ind = document.getElementById('current-token-indicator');
+      const user = api.getUser();
+      if (user) {
+        ind.innerHTML = `Active Session: <strong>${user.name}</strong> (${user.role}) &bull; Bearer token present`;
+      } else {
+        ind.innerHTML = `No active JWT token. Please run the login endpoint above or sign in.`;
+      }
+    }
+
+    async function refreshDbStats() {
+      try {
+        const res = await fetch('/api/system/db-stats');
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('stat-total-users').textContent = `${data.stats.users.total} (${data.stats.users.tutors} Tutors, ${data.stats.users.students} Students)`;
+          document.getElementById('stat-total-slots').textContent = `${data.stats.slots.total} (${data.stats.slots.available} open)`;
+          document.getElementById('stat-total-bookings').textContent = `${data.stats.bookings.total} (${data.stats.bookings.confirmed} confirmed, ${data.stats.bookings.pending} pending)`;
+
+          const healthBadge = document.getElementById('db-health-badge');
+          healthBadge.innerHTML = `<span class="pulse-dot"></span><span>MongoDB: ${data.stats.dbState} (slotsync_db)</span>`;
+        }
+      } catch (err) {
+        document.getElementById('db-health-badge').innerHTML = `<span style="color: #EF4444;">● MongoDB Connection Failed</span>`;
+      }
+    }
+
+    document.getElementById('refresh-stats-btn').addEventListener('click', refreshDbStats);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateTokenIndicator();
+      refreshDbStats();
+    });
+  </script>
+</body>
+</html>

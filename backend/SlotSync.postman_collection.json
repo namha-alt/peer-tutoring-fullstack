@@ -1,0 +1,545 @@
+{
+  "info": {
+    "name": "SlotSync Live Presentation Collection (Node.js + Express + MongoDB)",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "Numbered sequence of live API requests for class/project presentation. Each request includes pre-written tests and automatic environment variable extractors for tokens, slot IDs, and booking IDs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Step 01: System & Node.js Internals (Topics 31, 32)",
+      "item": [
+        {
+          "name": "01 - System Health & Database State",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('MongoDB is Connected', function () { pm.expect(pm.response.json().database.state).to.eql('Connected'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/system/health", "host": ["{{baseUrl}}"], "path": ["api", "system", "health"] }
+          }
+        },
+        {
+          "name": "02 - Node.js V8 Engine & Architecture",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('V8 Engine & Memory Stats Present', function () { pm.expect(pm.response.json().v8Engine).to.exist; });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/internals/system", "host": ["{{baseUrl}}"], "path": ["api", "internals", "system"] }
+          }
+        },
+        {
+          "name": "03 - Callbacks vs Promises vs Async/Await Demo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Execution pipeline succeeded', function () { pm.expect(pm.response.json().executionPipeline.length).to.be.above(0); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/internals/async-demo", "host": ["{{baseUrl}}"], "path": ["api", "internals", "async-demo"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 02: Authentication & Security (Topics 36, 39)",
+      "item": [
+        {
+          "name": "04 - Register New Student (POST /api/auth/register)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created or 400 Exists', function () { pm.expect([201, 400]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Williams\",\n  \"email\": \"alice@student.edu\",\n  \"password\": \"password123\",\n  \"role\": \"student\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+          }
+        },
+        {
+          "name": "05 - Login as Tutor Sarah (Auto-sets Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.environment.set('authToken', res.token);",
+                  "  pm.environment.set('tutorToken', res.token);",
+                  "  pm.environment.set('tutorId', res.user.id);",
+                  "  console.log('Tutor token saved to environment!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sarah@tutors.edu\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "06 - Verify Authenticated Profile (GET /api/auth/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('User is authenticated', function () { pm.expect(pm.response.json().user.email).to.exist; });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 03: Tutor Slot Management (Topics 37, 38, 41)",
+      "item": [
+        {
+          "name": "07 - Update Tutor Slot Capacity (PUT /api/users/tutor/capacity)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tutorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maxCapacity\": 3\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/tutor/capacity", "host": ["{{baseUrl}}"], "path": ["api", "users", "tutor", "capacity"] }
+          }
+        },
+        {
+          "name": "08 - Tutor Publishes Availability Slot (POST /api/slots/toggle)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created or 200 Removed', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.environment.set('slotId', res.data.id);",
+                  "  console.log('Saved slotId to environment:', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tutorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-10-23\",\n  \"startHour\": 15\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/slots/toggle", "host": ["{{baseUrl}}"], "path": ["api", "slots", "toggle"] }
+          }
+        },
+        {
+          "name": "09 - Get Tutor My Slots (GET /api/slots/my)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.length > 0) {",
+                  "  pm.environment.set('slotId', res.data[0].id || res.data[0]._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tutorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/slots/my", "host": ["{{baseUrl}}"], "path": ["api", "slots", "my"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 04: Student Discovery & Booking (Topics 27, 28, 40, 41)",
+      "item": [
+        {
+          "name": "10 - Login as Student John (Auto-sets Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.environment.set('authToken', res.token);",
+                  "  pm.environment.set('studentToken', res.token);",
+                  "  console.log('Student token saved to environment!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@student.edu\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "11 - Browse Qualified Tutors (GET /api/users/tutors)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Tutors list returned', function () { pm.expect(pm.response.json().count).to.be.above(0); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users/tutors", "host": ["{{baseUrl}}"], "path": ["api", "users", "tutors"] }
+          }
+        },
+        {
+          "name": "12 - Browse Available Calendar Slots (GET /api/slots/available)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.length > 0) {",
+                  "  const openSlot = res.data.find(s => !s.isFull) || res.data[0];",
+                  "  pm.environment.set('slotId', openSlot.id || openSlot._id);",
+                  "  pm.environment.set('slotDate', openSlot.date);",
+                  "  console.log('Saved open slotId:', openSlot.id, 'date:', openSlot.date);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/slots/available", "host": ["{{baseUrl}}"], "path": ["api", "slots", "available"] }
+          }
+        },
+        {
+          "name": "13 - Upload Study Material via Multer (POST /api/files/upload)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created or 200', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "const res = pm.response.json();",
+                  "if (res.file) {",
+                  "  pm.environment.set('attachmentUrl', res.file.fileUrl);",
+                  "  pm.environment.set('attachmentOriginalName', res.file.originalName);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "material",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/files/upload", "host": ["{{baseUrl}}"], "path": ["api", "files", "upload"] }
+          }
+        },
+        {
+          "name": "14 - Student Submits Booking Request (POST /api/bookings)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () { pm.response.to.have.status(201); });",
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.environment.set('bookingId', res.data.id);",
+                  "  console.log('Saved bookingId to environment:', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{slotId}}\",\n  \"date\": \"{{slotDate}}\",\n  \"topic\": \"Calculus Midterm Optimization Problems\",\n  \"specifics\": \"Need help solving problem set #4 and practicing chain rule derivatives.\",\n  \"attachmentUrl\": \"{{attachmentUrl}}\",\n  \"attachmentOriginalName\": \"{{attachmentOriginalName}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/bookings", "host": ["{{baseUrl}}"], "path": ["api", "bookings"] }
+          }
+        },
+        {
+          "name": "15 - Conflict Validation: Duplicate Request (Expect 400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Error message specifies already booked or limit', function () { pm.expect(pm.response.json().success).to.be.false; });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{slotId}}\",\n  \"date\": \"{{slotDate}}\",\n  \"topic\": \"Duplicate Request Attempt\",\n  \"specifics\": \"This request should be rejected by server validation.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/bookings", "host": ["{{baseUrl}}"], "path": ["api", "bookings"] }
+          }
+        },
+        {
+          "name": "16 - Get Student Bookings (Mongoose Populate)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Tutor information is populated', function () {",
+                  "  const res = pm.response.json();",
+                  "  if (res.data.length > 0) pm.expect(res.data[0].tutorName).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/bookings/my", "host": ["{{baseUrl}}"], "path": ["api", "bookings", "my"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 05: Tutor Approval & Events (Topics 34, 38, 41)",
+      "item": [
+        {
+          "name": "17 - Tutor Approves Booking Request (PATCH)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Status updated to confirmed', function () { pm.expect(pm.response.json().data.status).to.eql('confirmed'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tutorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "bookings", "{{bookingId}}", "status"] }
+          }
+        },
+        {
+          "name": "18 - Verify EventEmitter Audit Event Log",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Events array present', function () { pm.expect(pm.response.json().events).to.be.an('array'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/files/events", "host": ["{{baseUrl}}"], "path": ["api", "files", "events"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 06: Streams, Buffers & DB Stats (Topics 33, 34, 41)",
+      "item": [
+        {
+          "name": "19 - Stream Sessions Report as CSV (Node Streams)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Content-Type is text/csv', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/files/export/csv", "host": ["{{baseUrl}}"], "path": ["api", "files", "export", "csv"] }
+          }
+        },
+        {
+          "name": "20 - Buffer Allocation & Binary Encoding Demo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Hex and Base64 generated', function () { pm.expect(pm.response.json().hexRepresentation).to.exist; });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/buffer-demo?text=SlotSyncPostmanDemonstration",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "buffer-demo"],
+              "query": [{ "key": "text", "value": "SlotSyncPostmanDemonstration" }]
+            }
+          }
+        },
+        {
+          "name": "21 - View MongoDB Collection Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Database state is Connected', function () { pm.expect(pm.response.json().stats.dbState).to.eql('Connected'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/system/db-stats", "host": ["{{baseUrl}}"], "path": ["api", "system", "db-stats"] }
+          }
+        }
+      ]
+    }
+  ]
+}
