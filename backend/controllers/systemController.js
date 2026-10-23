@@ -234,7 +234,7 @@ exports.seedDatabase = async (req, res, next) => {
     // 4. Create Bookings
     await Booking.create({
       slotId: slot1._id,
-      studentId: student1._id,
+      studentId: student2._id,
       tutorId: tutor1._id,
       day: slot1.day,
       date: slot1.date,

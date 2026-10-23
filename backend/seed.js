@@ -137,7 +137,7 @@ const seedDatabase = async () => {
     // Confirmed session between student1 and tutor1
     await Booking.create({
       slotId: slot1._id,
-      studentId: student1._id,
+      studentId: student2._id,
       tutorId: tutor1._id,
       day: slot1.day,
       date: slot1.date,
@@ -152,7 +152,7 @@ const seedDatabase = async () => {
     // Pending request from student1 to tutor2
     await Booking.create({
       slotId: slot3._id,
-      studentId: student1._id,
+      studentId: student2._id,
       tutorId: tutor2._id,
       day: slot3.day,
       date: slot3.date,
