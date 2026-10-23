@@ -60,7 +60,6 @@ exports.getMySlots = async (req, res, next) => {
   try {
     const slots = await Slot.find({ tutorId: req.user._id, status: 'available' });
 
-    // Include active bookings information for each slot
     const slotsWithBookings = await Promise.all(
       slots.map(async (slot) => {
         const activeBookings = await Booking.find({
@@ -107,12 +106,12 @@ exports.toggleSlot = async (req, res, next) => {
       });
     }
 
-    // Check if date and time has already passed
-    const slotDateTime = new Date(`${date}T${String(hourNum).padStart(2, '0')}:00:00`);
-    if (slotDateTime < new Date()) {
+    // Only reject dates that are strictly before today's date
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (date < todayStr) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot set availability for past dates and times'
+        message: 'Cannot set availability for past dates'
       });
     }
 
@@ -194,7 +193,6 @@ exports.deleteSlot = async (req, res, next) => {
     const cancelReason = req.body.cancelReason || 'Slot removed by tutor';
     const now = new Date();
 
-    // Cancel all active bookings on this slot
     await Booking.updateMany(
       {
         slotId: slot._id,
